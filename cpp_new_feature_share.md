@@ -141,4 +141,67 @@ int main() {
 14.don't suspend because return std::suspend_never, and the continue will be automatically destroyed, bye
 ```
 ---
-### Part 3. 封装好的协程库
+### Part 3. 风控项目的应用展望
+
+* 一个小问题
+  当前所有界面的请求均为客户端发起一个请求，服务器端将整个请求处理完毕之后，将结果分为一个或者多个结果包，发送给客户端。当客户端请求的是比较重的业务逻辑时，服务器端需要进行复杂的业务处理，最终将一个巨大的结果返回给客户端，当预结算的需求出现任何的改动，就会影响到整个预结算服务。
+* 思考，是否能将功能细分，降低功能之间的耦合度。
+  将不同粒度的业务划分为不同层级的服务，数据和业务分割，基础服务和业务逻辑分割。不同层级的需求变更修改对应层级的代码，减少耦合。
+
+![一个可能的架构图](/new_arch_for_risk.png)
+
+按照上述架构图，预结算部分伪代码
+
+```
+
+void send_calc_margin_req() {
+  send_req;
+}
+
+void on_calc_margin_rsp() {
+  update_result_with_margin_rsp;
+}
+
+void send_calc_fee_req() {
+  send_req;
+}
+void on_calc_fee_rsp() {
+  update_result_with_fee_rsp;
+}
+
+```
+
+使用协程的方式的伪代码：
+```
+  void calc_margin()
+  {
+    send_calc_margin_req;
+    co_wait margin_rsp;
+    update_result_with_margin_rsp;
+  }
+
+  void calc_fee()
+  {
+    send_calc_fee_req;
+    co_wait fee_rsp;
+    update_result_with_fee_rsp;
+  }
+```
+**协程提供了一种使用同步的代码风格，编写异步代码的方式**
+
+
+  
+---
+### Part 4. 封装好的协程库
+
+[libco](https://github.com/Tencent/libco)
+libco是微信后台大规模使用的c/c++协程库，2013年至今稳定运行在微信后台的数万台机器上。
+
+[雅兰亭库 ](https://github.com/alibaba/yalantinglibs)
+ 是一个现代C++基础工具库的集合, 现在它包括 struct_pack, struct_json, struct_xml, struct_yaml, struct_pb, easylog, coro_rpc, coro_io, coro_http 和 async_simple.
+
+ [libaco](https://github.com/hnes/libaco)
+ 一个极速的轻量级 C 非对称协程库, 核心实现不超过 700 行代码，但包含了一个协程库应该有的全部功能。
+
+[libgo](https://gitcode.com/yyzybb537/libgo/tree/master/libgo)
+libgo 是一个使用 C++ 编写的协作式调度的stackful有栈协程库, 同时也是一个强大的并行编程库。
